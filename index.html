@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Capital One — Employee Time Tracker</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#003A70" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="C1 Tracker" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="icon" href="icon-192.png" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f3f4f6; min-height: 100vh; padding: 2rem 1rem; color: #111; }
+  .app { width: 100%; max-width: 480px; margin: 0 auto; }
+  .app.wide { max-width: 760px; }
+
+  /* LOGO BAR */
+  .logo-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 2rem; }
+  .logo-box { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .brand-name { font-size: 19px; font-weight: 700; color: #003A70; letter-spacing: -0.3px; }
+  .brand-sub { font-size: 12px; color: #6b7280; margin-top: 1px; }
+
+  /* CARD */
+  .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 1.75rem; }
+
+  /* LOGIN */
+  .login-title { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .login-sub { font-size: 14px; color: #6b7280; margin-bottom: 1.5rem; }
+  .field { margin-bottom: 1rem; }
+  .field label { display: block; font-size: 13px; color: #374151; font-weight: 500; margin-bottom: 6px; }
+  .field input, .field select {
+    width: 100%; padding: 10px 12px; font-size: 14px; border: 1px solid #d1d5db;
+    border-radius: 8px; background: #fff; color: #111; outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field input:focus, .field select:focus { border-color: #C8102E; box-shadow: 0 0 0 3px rgba(200,16,46,0.1); }
+  .btn-login {
+    width: 100%; padding: 11px; font-size: 15px; font-weight: 600;
+    background: #C8102E; color: #fff; border: none; border-radius: 8px; cursor: pointer; margin-top: 6px; transition: background 0.15s;
+  }
+  .btn-login:hover { background: #a80d25; }
+  .btn-login:active { transform: scale(0.98); }
+  .login-hint { font-size: 12px; color: #9ca3af; margin-top: 14px; line-height: 1.5; }
+  .err-msg { font-size: 13px; color: #dc2626; margin-top: 8px; display: none; }
+  .role-toggle { display: flex; gap: 8px; margin-bottom: 1.25rem; }
+  .role-btn {
+    flex: 1; padding: 9px; font-size: 13px; font-weight: 600; border-radius: 8px;
+    border: 1px solid #e5e7eb; background: #fff; color: #6b7280; cursor: pointer;
+  }
+  .role-btn.active { border-color: #C8102E; color: #C8102E; background: rgba(200,16,46,0.06); }
+
+  /* DASHBOARD */
+  #dashboard, #adminPanel { display: none; }
+  .emp-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+  .emp-left { display: flex; align-items: center; gap: 12px; }
+  .avatar {
+    width: 44px; height: 44px; border-radius: 50%; background: rgba(200,16,46,0.1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; color: #C8102E; flex-shrink: 0;
+    cursor: pointer; overflow: hidden; border: none; padding: 0;
+    background-size: cover; background-position: center;
+  }
+  .avatar:hover { box-shadow: 0 0 0 3px rgba(200,16,46,0.15); }
+  .id-link { font-size: 11px; color: #9ca3af; margin-top: 2px; cursor: pointer; text-decoration: underline; display: inline-block; }
+  .id-link:hover { color: #C8102E; }
+  .emp-name { font-size: 15px; font-weight: 600; }
+  .emp-id { font-size: 12px; color: #6b7280; margin-top: 2px; }
+  .btn-signout {
+    font-size: 13px; padding: 7px 13px; background: #fff; border: 1px solid #e5e7eb;
+    border-radius: 8px; cursor: pointer; color: #6b7280; display: flex; align-items: center; gap: 5px;
+  }
+  .btn-signout:hover { background: #f9fafb; }
+
+  /* Status */
+  .status-bar { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
+  .status-left .s-lbl, .status-right .s-lbl { font-size: 11px; color: #9ca3af; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  .status-val { display: flex; align-items: center; gap: 7px; font-size: 15px; font-weight: 600; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; }
+  .status-dot.clocked { background: #16a34a; animation: blink 1.5s ease-in-out infinite; }
+  .status-dot.onbreak { background: #f59e0b; animation: blink 1.5s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.35} }
+  .status-right { text-align: right; }
+  .shift-time { font-size: 14px; font-weight: 600; color: #374151; }
+
+  /* Stats */
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1rem; }
+  .stat { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 14px; }
+  .stat .st-lbl { font-size: 11px; color: #9ca3af; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .stat .st-val { font-size: 22px; font-weight: 700; color: #111; }
+
+  /* Actions */
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.25rem; }
+  .act-btn { padding: 14px 14px; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; cursor: pointer; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; }
+  .act-btn:hover:not(:disabled) { border-color: #d1d5db; background: #fafafa; }
+  .act-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+  .act-btn .ab-icon { font-size: 22px; margin-bottom: 2px; }
+  .act-btn .ab-lbl { font-size: 13px; font-weight: 600; color: #111; }
+  .act-btn .ab-sub { font-size: 11px; color: #9ca3af; }
+  .clock-btn { grid-column: span 2; flex-direction: row; align-items: center; justify-content: space-between; padding: 16px 18px; border-color: #C8102E; }
+  .clock-btn .ab-lbl { font-size: 16px; }
+  .clock-icon { font-size: 26px; color: #C8102E; }
+
+  /* Log */
+  .log-hdr { font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+  .log-list { display: flex; flex-direction: column; gap: 6px; }
+  .log-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 8px; background: #f9fafb; border: 1px solid #f3f4f6; font-size: 13px; }
+  .ld { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .ld.g { background: #16a34a; } .ld.a { background: #f59e0b; } .ld.r { background: #dc2626; } .ld.gr { background: #9ca3af; }
+  .log-txt { flex: 1; color: #374151; }
+  .log-tm { font-size: 12px; color: #9ca3af; }
+  .empty-log { font-size: 13px; color: #9ca3af; padding: 8px 0; }
+
+  /* ADMIN PANEL */
+  .admin-tabs { display: flex; gap: 6px; margin-bottom: 1.25rem; border-bottom: 1px solid #e5e7eb; }
+  .admin-tab { padding: 9px 14px; font-size: 13px; font-weight: 600; color: #6b7280; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .admin-tab.active { color: #C8102E; border-bottom-color: #C8102E; }
+  .admin-section { display: none; }
+  .admin-section.active { display: block; }
+  .add-emp-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.25rem; padding: 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; }
+  .add-emp-form .full { grid-column: span 2; }
+  .emp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .emp-table th { text-align: left; color: #9ca3af; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; padding: 8px 10px; border-bottom: 1px solid #e5e7eb; }
+  .emp-table td { padding: 10px; border-bottom: 1px solid #f3f4f6; color: #374151; }
+  .emp-table tr:last-child td { border-bottom: none; }
+  .badge-pill { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px; }
+  .badge-pill.on { background: rgba(22,163,74,0.1); color: #15803d; }
+  .badge-pill.off { background: #f3f4f6; color: #6b7280; }
+  .badge-pill.break { background: rgba(245,158,11,0.1); color: #b45309; }
+  .icon-btn { background: none; border: none; cursor: pointer; color: #9ca3af; padding: 4px; font-size: 16px; }
+  .icon-btn:hover { color: #dc2626; }
+  .empty-state { text-align: center; padding: 2rem 1rem; color: #9ca3af; font-size: 13px; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); align-items: center; justify-content: center; padding: 1rem; z-index: 1000; }
+  .modal-overlay.show { display: flex; }
+  .badge-card { width: 280px; background: #fff; border-radius: 16px; overflow: hidden; }
+  .badge-header { background: #003A70; padding: 14px 18px; display: flex; align-items: center; gap: 10px; }
+  .badge-header-text-main { color: #fff; font-size: 14px; font-weight: 600; }
+  .badge-header-text-sub { color: #B7C7DA; font-size: 10px; margin-top: 1px; }
+  .badge-body { padding: 20px 18px 16px; display: flex; flex-direction: column; align-items: center; }
+  .badge-photo { width: 96px; height: 96px; border-radius: 50%; background: #f3f4f6; border: 2px solid #e5e7eb; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; overflow: hidden; cursor: pointer; position: relative; background-size: cover; background-position: center; }
+  .badge-photo:hover::after { content: 'Change'; position: absolute; inset: 0; background: rgba(0,0,0,0.45); color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+  .badge-name { font-size: 17px; font-weight: 600; color: #111; }
+  .badge-role { font-size: 12px; color: #6b7280; margin-top: 2px; }
+  .badge-table { width: 100%; font-size: 12px; border-collapse: collapse; margin-top: 16px; border-top: 1px solid #e5e7eb; padding-top: 12px; }
+  .badge-table td { padding: 4px 0; }
+  .badge-table td:first-child { color: #9ca3af; }
+  .badge-table td:last-child { text-align: right; font-weight: 600; color: #111; }
+  .badge-barcode { background: #f9fafb; padding: 10px 18px; display: flex; align-items: center; justify-content: center; border-top: 1px solid #e5e7eb; }
+  .badge-footer { padding: 14px 18px; text-align: center; }
+  .badge-close { font-size: 13px; color: #6b7280; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 20px; cursor: pointer; }
+  .badge-hint { font-size: 11px; color: #9ca3af; margin-top: 8px; }
+
+  .small-modal-card { width: 320px; background: #fff; border-radius: 14px; padding: 1.5rem; }
+  .small-modal-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .small-modal-card p { font-size: 13px; color: #6b7280; margin-bottom: 1.25rem; }
+  .small-modal-actions { display: flex; gap: 8px; margin-top: 1rem; }
+  .btn-secondary { flex: 1; padding: 9px; font-size: 13px; font-weight: 600; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; color: #6b7280; cursor: pointer; }
+  .btn-danger { flex: 1; padding: 9px; font-size: 13px; font-weight: 600; border: none; border-radius: 8px; background: #dc2626; color: #fff; cursor: pointer; }
+
+  /* Toast */
+  #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: #111; color: #fff; font-size: 13px; padding: 10px 20px; border-radius: 22px; transition: transform 0.3s ease; pointer-events: none; white-space: nowrap; z-index: 999; }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #loadingScreen { text-align: center; padding: 3rem 1rem; color: #9ca3af; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="app" id="appRoot">
+
+  <div class="logo-bar">
+    <div class="logo-box">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="swooshGrad" x1="6" y1="10" x2="42" y2="38" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#8E0E1F"/>
+            <stop offset="0.55" stop-color="#C8102E"/>
+            <stop offset="1" stop-color="#E8475E"/>
+          </linearGradient>
+        </defs>
+        <path d="M9 33C16 33 20 29 24 24C28 19 32 15 39 15C35 21 31 27 24 33C20 36.5 14 38 9 33Z" fill="url(#swooshGrad)"/>
+        <path d="M39 15C32 15 28 19 24 24C20 29 16 33 9 33" stroke="#7A0C1A" stroke-width="0.6" fill="none" opacity="0.4"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name">Capital One</div>
+      <div class="brand-sub" id="brandSub">Employee Time Tracker</div>
+    </div>
+  </div>
+
+  <div id="loadingScreen">Loading...</div>
+
+  <!-- LOGIN -->
+  <div id="loginScreen" style="display:none">
+    <div class="card">
+      <div class="role-toggle">
+        <button class="role-btn active" id="roleEmpBtn" onclick="setLoginRole('employee')">Employee</button>
+        <button class="role-btn" id="roleAdminBtn" onclick="setLoginRole('admin')">Admin</button>
+      </div>
+      <p class="login-title" id="loginTitle">Employee sign in</p>
+      <p class="login-sub" id="loginSub">Enter your employee credentials to continue.</p>
+      <div class="field">
+        <label for="empId" id="idLabel">Employee ID</label>
+        <input id="empId" type="text" placeholder="e.g. C1-00123" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="empPass">Password</label>
+        <input id="empPass" type="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <button class="btn-login" onclick="doLogin()">Sign in</button>
+      <div class="err-msg" id="errMsg"><i class="ti ti-alert-circle"></i> Invalid credentials. Please try again.</div>
+      <div class="login-hint" id="loginHint">Demo employee: C1-00123 / password1</div>
+    </div>
+  </div>
+
+  <!-- EMPLOYEE DASHBOARD -->
+  <div id="dashboard">
+    <div class="card">
+      <div class="emp-row">
+        <div class="emp-left">
+          <button class="avatar" id="avInitials" onclick="openBadge()" aria-label="View my ID">JD</button>
+          <div>
+            <div class="emp-name" id="empNameLabel">Jane Doe</div>
+            <div class="emp-id" id="empIdLabel">ID: C1-00123</div>
+            <span class="id-link" onclick="openBadge()">View my ID</span>
+          </div>
+        </div>
+        <button class="btn-signout" onclick="doSignOut()"><i class="ti ti-logout"></i> Sign out</button>
+      </div>
+
+      <div class="status-bar">
+        <div class="status-left">
+          <div class="s-lbl">Status</div>
+          <div class="status-val"><div class="status-dot" id="sDot"></div><span id="sText">Not clocked in</span></div>
+        </div>
+        <div class="status-right">
+          <div class="s-lbl">Shift started</div>
+          <div class="shift-time" id="shiftStart">—</div>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat"><div class="st-lbl">Hours today</div><div class="st-val" id="hoursToday">0:00</div></div>
+        <div class="stat"><div class="st-lbl">Break time</div><div class="st-val" id="breakTotal">0:00</div></div>
+        <div class="stat"><div class="st-lbl">Net work</div><div class="st-val" id="netWork">0:00</div></div>
+      </div>
+
+      <div class="actions">
+        <button class="act-btn clock-btn" id="clockBtn" onclick="doClock()">
+          <div><div class="ab-lbl" id="clockLbl">Clock in</div><div class="ab-sub" id="clockSub">Start your shift</div></div>
+          <i id="clockIco" class="ti ti-login clock-icon"></i>
+        </button>
+        <button class="act-btn" id="brkStartBtn" onclick="doBreakStart()" disabled>
+          <i class="ti ti-coffee ab-icon" style="color:#f59e0b"></i>
+          <div class="ab-lbl">Start break</div><div class="ab-sub">Pause your time</div>
+        </button>
+        <button class="act-btn" id="brkEndBtn" onclick="doBreakEnd()" disabled>
+          <i class="ti ti-player-play ab-icon" style="color:#16a34a"></i>
+          <div class="ab-lbl">End break</div><div class="ab-sub">Resume shift</div>
+        </button>
+      </div>
+
+      <div class="log-hdr">Today's activity</div>
+      <div class="log-list" id="logList"><div class="empty-log">No activity yet — clock in to begin.</div></div>
+    </div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div id="adminPanel">
+    <div class="card">
+      <div class="emp-row">
+        <div class="emp-left">
+          <div class="avatar" style="background:rgba(0,58,112,0.1); color:#003A70; cursor:default;"><i class="ti ti-shield-lock" style="font-size:18px"></i></div>
+          <div>
+            <div class="emp-name">Admin console</div>
+            <div class="emp-id" id="adminNameLabel">Signed in as admin</div>
+          </div>
+        </div>
+        <button class="btn-signout" onclick="doSignOut()"><i class="ti ti-logout"></i> Sign out</button>
+      </div>
+
+      <div class="admin-tabs">
+        <button class="admin-tab active" id="tabEmployees" onclick="switchAdminTab('employees')">Employees</button>
+        <button class="admin-tab" id="tabActivity" onclick="switchAdminTab('activity')">Live activity</button>
+      </div>
+
+      <div class="admin-section active" id="sectionEmployees">
+        <div class="add-emp-form">
+          <div class="field full" style="margin-bottom:0">
+            <label>Full name</label>
+            <input id="newEmpName" type="text" placeholder="e.g. Sam Patel" />
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>Employee ID</label>
+            <input id="newEmpId" type="text" placeholder="C1-00999" />
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>Temporary password</label>
+            <input id="newEmpPass" type="text" placeholder="welcome123" />
+          </div>
+          <div class="field full" style="margin-bottom:0">
+            <label>Role / title</label>
+            <input id="newEmpRole" type="text" placeholder="e.g. Operations analyst" />
+          </div>
+          <button class="btn-login full" style="margin-top:0" onclick="addEmployee()"><i class="ti ti-user-plus"></i> Add employee</button>
+        </div>
+
+        <table class="emp-table" id="empTable">
+          <thead>
+            <tr><th>Name</th><th>Employee ID</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody id="empTableBody"></tbody>
+        </table>
+        <div class="empty-state" id="empEmptyState" style="display:none">No employees yet. Add your first employee above.</div>
+      </div>
+
+      <div class="admin-section" id="sectionActivity">
+        <table class="emp-table" id="activityTable">
+          <thead><tr><th>Name</th><th>Event</th><th>Time</th></tr></thead>
+          <tbody id="activityTableBody"></tbody>
+        </table>
+        <div class="empty-state" id="activityEmptyState" style="display:none">No activity recorded yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ID BADGE MODAL -->
+  <div class="modal-overlay" id="badgeModal">
+    <div class="badge-card">
+      <div class="badge-header">
+        <svg width="26" height="26" viewBox="0 0 48 48" fill="none">
+          <defs><linearGradient id="bg1" x1="6" y1="10" x2="42" y2="38" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#8E0E1F"/><stop offset="0.55" stop-color="#C8102E"/><stop offset="1" stop-color="#E8475E"/></linearGradient></defs>
+          <path d="M9 33C16 33 20 29 24 24C28 19 32 15 39 15C35 21 31 27 24 33C20 36.5 14 38 9 33Z" fill="url(#bg1)"/>
+        </svg>
+        <div><div class="badge-header-text-main">Capital One</div><div class="badge-header-text-sub">Employee identification</div></div>
+      </div>
+      <div class="badge-body">
+        <div class="badge-photo" id="badgePhoto" onclick="document.getElementById('photoInput').click()">
+          <i class="ti ti-camera-plus" style="font-size:30px; color:#9ca3af;" aria-hidden="true"></i>
+        </div>
+        <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="onPhotoSelected(event)" />
+        <div class="badge-name" id="badgeName">Jane Doe</div>
+        <div class="badge-role" id="badgeRole">Employee</div>
+        <table class="badge-table">
+          <tr><td>Employee ID</td><td id="badgeId">C1-00123</td></tr>
+          <tr><td>Location</td><td>Toronto, ON</td></tr>
+          <tr><td>Valid through</td><td>12/2027</td></tr>
+        </table>
+      </div>
+      <div class="badge-barcode"><div style="width:120px; height:28px; background:repeating-linear-gradient(90deg, #111 0 2px, transparent 2px 4px);"></div></div>
+      <div class="badge-footer">
+        <button class="badge-close" onclick="closeBadge()">Close</button>
+        <div class="badge-hint">Tap your photo to add or change it</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRM REMOVE MODAL -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="small-modal-card">
+      <h3>Remove employee?</h3>
+      <p id="confirmText">This will permanently remove this employee's access and login.</p>
+      <div class="small-modal-actions">
+        <button class="btn-secondary" onclick="closeConfirm()">Cancel</button>
+        <button class="btn-danger" onclick="confirmRemoveEmployee()">Remove</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div id="toast"></div>
+
+<script>
+if (!window.storage) {
+  window.storage = {
+    get: async (key) => {
+      const v = localStorage.getItem('c1_' + key);
+      if (v === null) throw new Error('not found');
+      return { key, value: v, shared: true };
+    },
+    set: async (key, value) => { localStorage.setItem('c1_' + key, value); return { key, value, shared: true }; },
+    delete: async (key) => { localStorage.removeItem('c1_' + key); return { key, deleted: true, shared: true }; }
+  };
+}
+const ADMIN_ID = 'ADMIN';
+const ADMIN_PASS = 'capitalone-admin';
+let loginRole = 'employee';
+let currentUser = null;
+let pendingRemoveId = null;
+
+let employees = {};
+let activityLog = [];
+
+let st = { clockedIn:false, onBreak:false, shiftStart:null, breakStart:null, totalBreakMs:0, log:[], ticker:null };
+
+function fmt(ms) { const m = Math.floor(ms/60000), h = Math.floor(m/60); return h+':'+String(m%60).padStart(2,'0'); }
+function fmtTime(d) { d = (d instanceof Date) ? d : new Date(d); return d ? d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '—'; }
+
+async function loadData() {
+  try {
+    const res = await window.storage.get('employees', true);
+    employees = res ? JSON.parse(res.value) : {};
+  } catch (e) { employees = {}; }
+  try {
+    const res = await window.storage.get('activity-log', true);
+    activityLog = res ? JSON.parse(res.value) : [];
+  } catch (e) { activityLog = []; }
+
+  if (Object.keys(employees).length === 0) {
+    employees = {
+      'C1-00123': { name: 'Jane Doe', pass: 'password1', role: 'Senior associate, retail banking', clockedIn:false, onBreak:false, shiftStart:null, breakStart:null, totalBreakMs:0, photo:null }
+    };
+    await saveEmployees();
+  }
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'block';
+}
+
+async function saveEmployees() {
+  try { await window.storage.set('employees', JSON.stringify(employees), true); } catch (e) {}
+}
+async function saveActivity() {
+  try { await window.storage.set('activity-log', JSON.stringify(activityLog.slice(0,200)), true); } catch (e) {}
+}
+
+function setLoginRole(role) {
+  loginRole = role;
+  document.getElementById('roleEmpBtn').classList.toggle('active', role === 'employee');
+  document.getElementById('roleAdminBtn').classList.toggle('active', role === 'admin');
+  document.getElementById('loginTitle').textContent = role === 'employee' ? 'Employee sign in' : 'Admin sign in';
+  document.getElementById('loginSub').textContent = role === 'employee' ? 'Enter your employee credentials to continue.' : 'Enter your admin credentials to manage employees.';
+  document.getElementById('idLabel').textContent = role === 'employee' ? 'Employee ID' : 'Admin ID';
+  document.getElementById('empId').placeholder = role === 'employee' ? 'e.g. C1-00123' : 'ADMIN';
+  document.getElementById('loginHint').textContent = role === 'employee' ? 'Demo employee: C1-00123 / password1' : 'Demo admin: ADMIN / capitalone-admin';
+  document.getElementById('errMsg').style.display = 'none';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadData();
+  document.getElementById('empPass').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
+  document.getElementById('empId').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('empPass').focus(); });
+});
+
+async function doLogin() {
+  const id = document.getElementById('empId').value.trim().toUpperCase();
+  const pass = document.getElementById('empPass').value;
+  const err = document.getElementById('errMsg');
+
+  if (loginRole === 'admin') {
+    if (id === ADMIN_ID && pass === ADMIN_PASS) {
+      err.style.display = 'none';
+      currentUser = { id: 'ADMIN', isAdmin: true };
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminPanel').style.display = 'block';
+      document.getElementById('app').classList && 0;
+      renderEmployeeTable();
+      renderActivityTable();
+    } else { err.style.display = 'block'; }
+    return;
+  }
+
+  const u = employees[id];
+  if (u && u.pass === pass) {
+    err.style.display = 'none';
+    currentUser = { id, isAdmin: false };
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    const init = u.name.split(' ').map(n=>n[0]).join('');
+    document.getElementById('empNameLabel').textContent = u.name;
+    document.getElementById('empIdLabel').textContent = 'ID: ' + id;
+    document.getElementById('badgeName').textContent = u.name;
+    document.getElementById('badgeRole').textContent = u.role || 'Employee';
+    document.getElementById('badgeId').textContent = id;
+    document.getElementById('avInitials').style.backgroundImage = '';
+    document.getElementById('avInitials').textContent = init;
+    document.getElementById('badgePhoto').style.backgroundImage = '';
+    document.getElementById('badgePhoto').innerHTML = '<i class="ti ti-camera-plus" style="font-size:30px; color:#9ca3af;" aria-hidden="true"></i>';
+    if (u.photo) setPhoto(u.photo);
+
+    st = { clockedIn: !!u.clockedIn, onBreak: !!u.onBreak, shiftStart: u.shiftStart ? new Date(u.shiftStart) : null, breakStart: u.breakStart ? new Date(u.breakStart) : null, totalBreakMs: u.totalBreakMs || 0, log: u.log || [], ticker: null };
+    if (st.clockedIn) {
+      setStatus(st.onBreak ? 'break' : 'on'); setClockBtn(true);
+      document.getElementById('brkStartBtn').disabled = st.onBreak;
+      document.getElementById('brkEndBtn').disabled = !st.onBreak;
+      document.getElementById('shiftStart').textContent = fmtTime(st.shiftStart);
+    } else {
+      setStatus('off'); setClockBtn(false);
+    }
+    renderLog();
+    st.ticker = setInterval(updateStats, 1000);
+    updateStats();
+  } else { err.style.display = 'block'; }
+}
+
+function openBadge() { document.getElementById('badgeModal').classList.add('show'); }
+function closeBadge() { document.getElementById('badgeModal').classList.remove('show'); }
+
+function onPhotoSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(ev) {
+    const dataUrl = ev.target.result;
+    if (currentUser && employees[currentUser.id]) {
+      employees[currentUser.id].photo = dataUrl;
+      await saveEmployees();
+    }
+    setPhoto(dataUrl);
+    showToast('Photo updated.');
+  };
+  reader.readAsDataURL(file);
+}
+
+function setPhoto(dataUrl) {
+  const av = document.getElementById('avInitials');
+  av.style.backgroundImage = 'url(' + dataUrl + ')'; av.textContent = '';
+  const bp = document.getElementById('badgePhoto');
+  bp.style.backgroundImage = 'url(' + dataUrl + ')'; bp.innerHTML = '';
+}
+
+async function persistEmployeeState() {
+  if (!currentUser || currentUser.isAdmin || !employees[currentUser.id]) return;
+  const e = employees[currentUser.id];
+  e.clockedIn = st.clockedIn; e.onBreak = st.onBreak;
+  e.shiftStart = st.shiftStart ? st.shiftStart.toISOString() : null;
+  e.breakStart = st.breakStart ? st.breakStart.toISOString() : null;
+  e.totalBreakMs = st.totalBreakMs; e.log = st.log.slice(0, 20);
+  await saveEmployees();
+}
+
+async function logActivity(name, text) {
+  activityLog.unshift({ name, text, time: new Date().toISOString() });
+  await saveActivity();
+}
+
+async function doSignOut() {
+  if (currentUser && !currentUser.isAdmin) {
+    if (st.clockedIn) await logActivity(employees[currentUser.id].name, 'Auto-clocked out on sign out');
+    await persistEmployeeState();
+  }
+  clearInterval(st.ticker);
+  st = { clockedIn:false, onBreak:false, shiftStart:null, breakStart:null, totalBreakMs:0, log:[], ticker:null };
+  currentUser = null; pendingRemoveId = null;
+  closeBadge(); closeConfirm();
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('adminPanel').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'block';
+  document.getElementById('empPass').value = ''; document.getElementById('empId').value = '';
+  ['hoursToday','breakTotal','netWork'].forEach(id => document.getElementById(id).textContent='0:00');
+  renderLog(); setStatus('off');
+  document.getElementById('shiftStart').textContent = '—';
+  showToast('Signed out successfully.');
+}
+
+async function doClock() {
+  const u = employees[currentUser.id];
+  if (!st.clockedIn) {
+    st.clockedIn = true; st.shiftStart = new Date();
+    document.getElementById('shiftStart').textContent = fmtTime(st.shiftStart);
+    setStatus('on'); setClockBtn(true);
+    document.getElementById('brkStartBtn').disabled = false;
+    addLog('g','Clocked in'); showToast('Clocked in — have a great shift!');
+    await logActivity(u.name, 'Clocked in');
+  } else {
+    if (st.onBreak) await doBreakEnd();
+    st.clockedIn = false; st.onBreak = false;
+    updateStats();
+    setStatus('off'); setClockBtn(false);
+    document.getElementById('brkStartBtn').disabled = true;
+    document.getElementById('brkEndBtn').disabled = true;
+    addLog('gr','Clocked out'); showToast('Clocked out — see you next time!');
+    await logActivity(u.name, 'Clocked out');
+    st.shiftStart = null;
+    document.getElementById('shiftStart').textContent = '—';
+  }
+  await persistEmployeeState();
+}
+
+async function doBreakStart() {
+  if (!st.clockedIn || st.onBreak) return;
+  st.onBreak = true; st.breakStart = new Date();
+  setStatus('break');
+  document.getElementById('brkStartBtn').disabled = true;
+  document.getElementById('brkEndBtn').disabled = false;
+  addLog('a','Break started'); showToast('Enjoy your break!');
+  await logActivity(employees[currentUser.id].name, 'Break started');
+  await persistEmployeeState();
+}
+
+async function doBreakEnd() {
+  if (!st.onBreak) return;
+  const diff = Date.now() - st.breakStart.getTime();
+  st.totalBreakMs += diff; st.onBreak = false; st.breakStart = null;
+  setStatus('on');
+  document.getElementById('brkStartBtn').disabled = false;
+  document.getElementById('brkEndBtn').disabled = true;
+  addLog('g','Break ended (' + fmt(diff) + ')'); showToast('Break over — welcome back!');
+  await logActivity(employees[currentUser.id].name, 'Break ended (' + fmt(diff) + ')');
+  await persistEmployeeState();
+}
+
+function setStatus(s) {
+  const dot = document.getElementById('sDot'); const txt = document.getElementById('sText');
+  dot.className = 'status-dot' + (s==='on'?' clocked':s==='break'?' onbreak':'');
+  txt.textContent = s==='on'?'Clocked in':s==='break'?'On break':'Not clocked in';
+}
+function setClockBtn(in_) {
+  document.getElementById('clockLbl').textContent = in_ ? 'Clock out' : 'Clock in';
+  document.getElementById('clockSub').textContent = in_ ? 'End your shift' : 'Start your shift';
+  document.getElementById('clockIco').className = 'ti ' + (in_ ? 'ti-logout' : 'ti-login') + ' clock-icon';
+  document.getElementById('clockBtn').style.borderColor = in_ ? '#6b7280' : '#C8102E';
+}
+function addLog(color, text) { st.log.unshift({color, text, time: new Date().toISOString()}); renderLog(); }
+function renderLog() {
+  const el = document.getElementById('logList');
+  if (!st.log.length) { el.innerHTML = '<div class="empty-log">No activity yet — clock in to begin.</div>'; return; }
+  el.innerHTML = st.log.slice(0,8).map(l => `<div class="log-item"><span class="ld ${l.color}"></span><span class="log-txt">${l.text}</span><span class="log-tm">${fmtTime(l.time)}</span></div>`).join('');
+}
+function updateStats() {
+  if (!st.shiftStart) return;
+  const total = Date.now() - st.shiftStart.getTime();
+  const brkNow = st.onBreak ? (Date.now() - st.breakStart.getTime()) : 0;
+  const brk = st.totalBreakMs + brkNow;
+  document.getElementById('hoursToday').textContent = fmt(total);
+  document.getElementById('breakTotal').textContent = fmt(brk);
+  document.getElementById('netWork').textContent = fmt(Math.max(0, total - brk));
+}
+
+/* ===== ADMIN ===== */
+function switchAdminTab(tab) {
+  document.getElementById('tabEmployees').classList.toggle('active', tab === 'employees');
+  document.getElementById('tabActivity').classList.toggle('active', tab === 'activity');
+  document.getElementById('sectionEmployees').classList.toggle('active', tab === 'employees');
+  document.getElementById('sectionActivity').classList.toggle('active', tab === 'activity');
+  if (tab === 'employees') renderEmployeeTable(); else renderActivityTable();
+}
+
+async function addEmployee() {
+  const name = document.getElementById('newEmpName').value.trim();
+  const id = document.getElementById('newEmpId').value.trim().toUpperCase();
+  const pass = document.getElementById('newEmpPass').value.trim();
+  const role = document.getElementById('newEmpRole').value.trim() || 'Employee';
+  if (!name || !id || !pass) { showToast('Please fill in name, ID, and password.'); return; }
+  if (employees[id]) { showToast('That employee ID already exists.'); return; }
+  employees[id] = { name, pass, role, clockedIn:false, onBreak:false, shiftStart:null, breakStart:null, totalBreakMs:0, log:[], photo:null };
+  await saveEmployees();
+  document.getElementById('newEmpName').value = '';
+  document.getElementById('newEmpId').value = '';
+  document.getElementById('newEmpPass').value = '';
+  document.getElementById('newEmpRole').value = '';
+  renderEmployeeTable();
+  showToast(name + ' added successfully.');
+}
+
+function renderEmployeeTable() {
+  const body = document.getElementById('empTableBody');
+  const ids = Object.keys(employees);
+  document.getElementById('empEmptyState').style.display = ids.length ? 'none' : 'block';
+  document.getElementById('empTable').style.display = ids.length ? 'table' : 'none';
+  body.innerHTML = ids.map(id => {
+    const e = employees[id];
+    let pillClass = 'off', pillText = 'Not clocked in';
+    if (e.clockedIn && e.onBreak) { pillClass = 'break'; pillText = 'On break'; }
+    else if (e.clockedIn) { pillClass = 'on'; pillText = 'Clocked in'; }
+    return `<tr>
+      <td>${e.name}</td>
+      <td>${id}</td>
+      <td><span class="badge-pill ${pillClass}">${pillText}</span></td>
+      <td><button class="icon-btn" onclick="askRemoveEmployee('${id}')" aria-label="Remove employee"><i class="ti ti-trash"></i></button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderActivityTable() {
+  const body = document.getElementById('activityTableBody');
+  document.getElementById('activityEmptyState').style.display = activityLog.length ? 'none' : 'block';
+  document.getElementById('activityTable').style.display = activityLog.length ? 'table' : 'none';
+  body.innerHTML = activityLog.slice(0,30).map(a => `<tr><td>${a.name}</td><td>${a.text}</td><td>${fmtTime(a.time)}</td></tr>`).join('');
+}
+
+function askRemoveEmployee(id) {
+  pendingRemoveId = id;
+  document.getElementById('confirmText').textContent = "This will permanently remove " + employees[id].name + "'s access and login.";
+  document.getElementById('confirmModal').classList.add('show');
+}
+function closeConfirm() { document.getElementById('confirmModal').classList.remove('show'); pendingRemoveId = null; }
+async function confirmRemoveEmployee() {
+  if (pendingRemoveId && employees[pendingRemoveId]) {
+    const name = employees[pendingRemoveId].name;
+    delete employees[pendingRemoveId];
+    await saveEmployees();
+    renderEmployeeTable();
+    showToast(name + ' removed.');
+  }
+  closeConfirm();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
